@@ -7,6 +7,9 @@ import (
 	"time"
 	"./norms"
 	"./coersion"
+	"fmt"
+	"errors"
+	"net/http"
 )
 
 // Wrap response is a helper function to wrap the content block of
@@ -32,51 +35,98 @@ func index (c *gin.Context){
 // Square takes in a single value, and returns it's square.
 func square (c *gin.Context){
 	x, err := strconv.ParseFloat(c.Param("x"), 64)
+
+	var response gin.H
+	var code int
+
 	if err != nil {
 		content := gin.H{"val": x}
-		response := wrap_response(content, err)
-		c.JSON(500, response)
+		response = wrap_response(content, err)
+		code = 500
 	} else {
 		content := gin.H{"val": x, "square": x * x}
-		response := wrap_response(content, nil)
-		c.JSON(200, response)
+		response = wrap_response(content, nil)
+		code = 200
 	}
+
+	c.JSON(code, response)
 }
 
 // norm takes the l2 norm of a vector
 func norm (c *gin.Context) {
 	// parse the input into a vector of floats
 	stringvec := c.Param("v")
+	kind := "l2"
+
 	arr, err := coersion.CSV2FloatArray(strings.Split(stringvec, ","))
+
+	var response gin.H
+	var code int
 	if err != nil {
 		content := gin.H{"vector": arr, "norm": nil}
-		response := wrap_response(content, err)
-		c.IndentedJSON(500, response)
+		response = wrap_response(content, err)
+		code = 500
 	} else {
-		norm, err := norms.L2(arr)
+		var norm float64
+		var err error
+		if kind == "l2" {
+			norm, err = norms.L2(arr)
+		} else {
+			err = errors.New(fmt.Sprintf("unknown norm kind: %s", kind))
+		}
+
+
 		if err != nil {
 			content := gin.H{"vector": arr, "norm": norm}
-			response := wrap_response(content, err)
-			c.IndentedJSON(500, response)
+			response = wrap_response(content, err)
+			code = 500
 		} else {
 			content := gin.H{"vector": arr, "norm": norm}
-			response := wrap_response(content, nil)
-			c.IndentedJSON(200, response)
+			response = wrap_response(content, nil)
+			code = 200
 		}
 	}
+
+	c.IndentedJSON(code, response)
 
 }
 
 
 func main(){
 	app := gin.Default()
+	app.LoadHTMLGlob("templates/**/*")
 
-	// just a vanilla get with no parameters
-	app.GET("/", index)
+	// index page, post returns json status, get will return an html status page
+	app.POST("/", index)
+        app.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "public/index.tmpl", gin.H{
+			"title": "hello world",
+		})
+	})
 
-	// a get with some parameters
-	app.GET("/square/:x", square)
-	app.GET("/norm/:v", norm)
+	// square: a post will return json response and get will be an html page
+	app.POST("/square/:x", square)
+	app.GET("/square/:x", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "public/square.tmpl", gin.H{
+			"title": "hello world",
+		})
+	})
 
-	app.Run(":8000")
+	// norm: a post will return json response and get will be an html page
+	app.POST("/norm/:v", norm)
+	app.GET("/norm/:v", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "public/norms.tmpl", gin.H{
+			"title": "hello world",
+		})
+	})
+
+	// run the server
+	s := &http.Server{
+		Addr:           ":8000",
+		Handler:        app,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+	s.ListenAndServe()
 }

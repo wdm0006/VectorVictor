@@ -1,0 +1,26 @@
+{{ define "public/norms.tmpl" }}
+{{ template "partials/header.tmpl" . }}
+    <p>Norms: an endpoint for calculating different norms of a vector</p>
+    <br>
+    <p>Enter your vector as a comma seperated string:</p>
+    <textarea id="vector"></textarea>
+    <button id="submit">Submit</button>
+    <div id="result"></div>
+    <script>
+        $('#submit').click(function(e) {
+            e.preventDefault();
+            console.log('norm/' + $('#vector').val());
+            var data = $.post(
+                'norm/' + $('#vector').val(),
+                JSON.stringify({"kind": "l2"})
+            );
+            posting.done(function( data ) {
+                var content = $( data ).find( "#content" );
+                $( "#result" ).empty().append( content );
+              });
+        });
+
+
+    </script>
+{{ template "partials/footer.tmpl" . }}
+{{ end }}
