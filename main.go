@@ -58,7 +58,7 @@ func norm (c *gin.Context) {
 	stringvec := c.Param("v")
 	kind := "l2"
 
-	arr, err := coersion.CSV2FloatArray(strings.Split(stringvec, ","))
+	arr, err := coersion.CSV2FloatArray(stringvec)
 
 	var response gin.H
 	var code int
