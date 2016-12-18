@@ -1,9 +1,30 @@
-{{ define "public/norms.tmpl" }}
+{{ define "public/square.tmpl" }}
 {{ template "partials/header.tmpl" . }}
-    <p>Square: and endpoint for squaring values</p>
-    <br>
-    <p>Enter your value:</p>
-    <textarea id="vector"></textarea>
-    <button id="submit">Submit</button>
+
+    <div class='row'>
+        <h2>Square</h2>
+        <p>an endpoint for squaring vectors elementwise</p>
+        <br>
+        <p>Enter your vector as a comma seperated string:</p>
+        <textarea class='form-control' id="vector"></textarea>
+        <br>
+        <button id="submit" class='btn btn-lg'>Submit</button>
+        <hr>
+        <div id="result">[]</div>
+    </div>
+
+    <script>
+        $("#submit").click(function(e) {
+            e.preventDefault();
+            console.log("square?v=" + $("#vector").val());
+            var data = $.ajax({
+                "type": "POST",
+                "url": "square?v=" + $("#vector").val(),
+                "success": function( data ) {
+                    $("#result").empty().append(JSON.stringify(data));
+                }
+            });
+        });
+    </script>
 {{ template "partials/footer.tmpl" . }}
 {{ end }}

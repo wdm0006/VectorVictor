@@ -3,6 +3,12 @@
 <h1>
     {{ .title }}
 </h1>
-<p>Using public/index.tmpl</p>
+<p>VectorVictor: a toy project for calculating vector norms in golang.</p>
+<hr>
+<h3>Endpoints</h3>
+<ul>
+    <li><a href="/square">/square</a></li>
+    <li><a href="/norm">/norm</a></li>
+</ul>
 {{ template "partials/footer.tmpl" . }}
 {{ end }}

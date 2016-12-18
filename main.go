@@ -2,7 +2,7 @@ package main
 
 import (
     	"github.com/gin-gonic/gin"
-	"strconv"
+	"./elementwise"
 	"time"
 	"./norms"
 	"./coersion"
@@ -50,21 +50,33 @@ func index (c *gin.Context){
 	c.JSON(200, response)
 }
 
-// Square takes in a single value, and returns it's square.
+// Square takes in a vector, and returns it's elementwise square.
 func square (c *gin.Context){
-	x, err := strconv.ParseFloat(c.Param("x"), 64)
+	// parse the input into a vector of floats
+	stringvec := c.Query("v")
+	kind := c.DefaultQuery("kind", "l2")
+	kind = strings.ToLower(kind)
+
+	arr, err := coersion.CSV2FloatArray(stringvec)
 
 	var response gin.H
 	var code int
 
 	if err != nil {
-		content := gin.H{"val": x}
+		content := gin.H{"val": arr}
 		response = wrap_response(content, err)
 		code = 500
 	} else {
-		content := gin.H{"val": x, "square": x * x}
-		response = wrap_response(content, nil)
-		code = 200
+		arr, err := elementwise.Square(arr)
+		if err != nil {
+			content := gin.H{"val": arr}
+			response = wrap_response(content, err)
+			code = 500
+		} else {
+			content := gin.H{"val": arr}
+			response = wrap_response(content, nil)
+			code = 200
+		}
 	}
 
 	c.JSON(code, response)
@@ -129,15 +141,15 @@ func main(){
 	app.POST("/", index)
         app.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "public/index.tmpl", gin.H{
-			"title": "hello world",
+			"title": "VectorVictor",
 		})
 	})
 
 	// square: a post will return json response and get will be an html page
-	app.POST("/square/:x", square)
-	app.GET("/square/:x", func(c *gin.Context) {
+	app.POST("/square", square)
+	app.GET("/square", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "public/square.tmpl", gin.H{
-			"title": "hello world",
+			"title": "VectorVictor: Square",
 		})
 	})
 
@@ -145,7 +157,7 @@ func main(){
 	app.POST("/norm", norm)
 	app.GET("/norm", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "public/norms.tmpl", gin.H{
-			"title": "hello world",
+			"title": "VectorVictor: Norms",
 		})
 	})
 
