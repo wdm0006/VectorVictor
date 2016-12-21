@@ -10,7 +10,14 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"github.com/miketheprogrammer/go-thrust/lib/bindings/menu"
+	"github.com/miketheprogrammer/go-thrust/lib/commands"
+	"github.com/miketheprogrammer/go-thrust/thrust"
 )
+
+const Version = "0.0.1"
+
+var VersionPrerelease = "dev"
 
 // Wrap response is a helper function to wrap the content block of
 // a response with info blocks (containing things like local time
@@ -21,6 +28,8 @@ func wrap_response(content gin.H, errors error) (gin.H){
 		"info": gin.H{"now": time.Now()},
 		"content": content,
 		"errors": errors,
+		"version": Version,
+		"version_postfix": VersionPrerelease,
 	}
 	return response
 }
@@ -128,6 +137,45 @@ func norm (c *gin.Context) {
 
 
 func main(){
+	// thrust initialization
+	thrust.InitLogger()
+	thrust.Start()
+
+	mysession := thrust.NewSession(false, false, "cache")
+	thrustWindow := thrust.NewWindow(thrust.WindowOptions{
+		RootUrl: fmt.Sprintf("http://127.0.0.1:8000"),
+		Session: mysession,
+		Title: "VectorVictor",
+		HasFrame: true,
+
+	})
+
+	// show the window
+	thrustWindow.Show()
+	thrustWindow.Maximize()
+	thrustWindow.Focus()
+
+	// build a basic menu
+	applicationMenu := thrust.NewMenu()
+	applicationMenuRoot := thrust.NewMenu()
+	applicationMenuRoot.AddItem(1, "About")
+	applicationMenuRoot.RegisterEventHandlerByCommandID(1,
+		func(reply commands.CommandResponse, item *menu.MenuItem) {
+			fmt.Println("About Handled")
+		})
+
+	applicationMenuRoot.AddSeparator()
+	applicationMenuRoot.AddItem(2, "Close")
+	applicationMenuRoot.RegisterEventHandlerByCommandID(2,
+		func(reply commands.CommandResponse, item *menu.MenuItem) {
+			fmt.Println("Close Event Handled")
+			thrustWindow.Close()
+			thrust.Exit()
+		})
+	applicationMenu.AddSubmenu(3, "Application", applicationMenuRoot)
+	applicationMenu.SetApplicationMenu()
+
+	// set up the app itself
 	app := gin.New()
 
 	// middlwares
@@ -169,5 +217,9 @@ func main(){
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	s.ListenAndServe()
+	err := s.ListenAndServe()
+
+	if err != nil {
+		panic(err)
+	}
 }
