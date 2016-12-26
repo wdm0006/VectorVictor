@@ -13,6 +13,7 @@ import (
 	"github.com/miketheprogrammer/go-thrust/lib/bindings/menu"
 	"github.com/miketheprogrammer/go-thrust/lib/commands"
 	"github.com/miketheprogrammer/go-thrust/thrust"
+	"github.com/miketheprogrammer/go-thrust/lib/connection"
 )
 
 const Version = "0.0.1"
@@ -175,6 +176,18 @@ func main(){
 	applicationMenu.AddSubmenu(3, "Application", applicationMenuRoot)
 	applicationMenu.SetApplicationMenu()
 
+	// register an event handler for safe shutdown of the app
+	onclose, err := thrust.NewEventHandler("closed", func(cr commands.EventResult) {
+		fmt.Println("Close Event Occured")
+		thrustWindow.Close()
+		thrust.Exit()
+	})
+	fmt.Println(onclose)
+	if err != nil {
+		fmt.Println(err)
+		connection.CleanExit()
+	}
+
 	// set up the app itself
 	app := gin.New()
 
@@ -217,8 +230,7 @@ func main(){
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	err := s.ListenAndServe()
-
+	err = s.ListenAndServe()
 	if err != nil {
 		panic(err)
 	}
