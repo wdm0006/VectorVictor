@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+
+# Builds the project by packaging up the static files into a neat bundle.
+go-bindata ./templates/...
+go build -o ./dist/VectorVictor

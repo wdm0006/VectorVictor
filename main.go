@@ -1,24 +1,27 @@
 package main
 
 import (
-    	"github.com/gin-gonic/gin"
-	"./elementwise"
+	"gopkg.in/gin-gonic/gin.v1"
 	"time"
-	"./norms"
-	"./coersion"
 	"fmt"
 	"errors"
 	"net/http"
+	"html/template"
 	"strings"
 	"github.com/miketheprogrammer/go-thrust/lib/bindings/menu"
 	"github.com/miketheprogrammer/go-thrust/lib/commands"
 	"github.com/miketheprogrammer/go-thrust/thrust"
 	"github.com/miketheprogrammer/go-thrust/lib/connection"
+	"github.com/gin-contrib/multitemplate"
+	"log"
 )
 
 const Version = "0.0.1"
 
 var VersionPrerelease = "dev"
+
+// the max N value supported for exponents
+const MAX_N float64 = 100.0
 
 // Wrap response is a helper function to wrap the content block of
 // a response with info blocks (containing things like local time
@@ -67,7 +70,7 @@ func square (c *gin.Context){
 	kind := c.DefaultQuery("kind", "l2")
 	kind = strings.ToLower(kind)
 
-	arr, err := coersion.CSV2FloatArray(stringvec)
+	arr, err := CSV2FloatArray(stringvec)
 
 	var response gin.H
 	var code int
@@ -77,7 +80,7 @@ func square (c *gin.Context){
 		response = wrap_response(content, err)
 		code = 500
 	} else {
-		arr, err := elementwise.Square(arr)
+		arr, err := Square(arr)
 		if err != nil {
 			content := gin.H{"val": arr}
 			response = wrap_response(content, err)
@@ -99,7 +102,7 @@ func norm (c *gin.Context) {
 	kind := c.DefaultQuery("kind", "l2")
 	kind = strings.ToLower(kind)
 
-	arr, err := coersion.CSV2FloatArray(stringvec)
+	arr, err := CSV2FloatArray(stringvec)
 
 	var response gin.H
 	var code int
@@ -111,11 +114,11 @@ func norm (c *gin.Context) {
 		var norm float64
 		var err error
 		if kind == "l2" {
-			norm, err = norms.L2(arr)
+			norm, err = L2(arr)
 		} else if kind == "l1"{
-			norm, err = norms.L1(arr)
+			norm, err = L1(arr)
 		} else if kind == "linfinity" {
-			norm, err = norms.Linfinity(arr)
+			norm, err = Linfinity(arr)
 		} else {
 			err = errors.New(fmt.Sprintf("unknown norm kind: %s", kind))
 		}
@@ -136,6 +139,24 @@ func norm (c *gin.Context) {
 
 }
 
+func loadTemplates(list ...string) multitemplate.Render {
+	r := multitemplate.New()
+	for _, x := range list {
+		templateString, err := Asset("templates/" + x)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		tmplMessage, err := template.New(x).Parse(string(templateString))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		r.Add(x, tmplMessage)
+	}
+	fmt.Println(r)
+	return r
+}
 
 func main(){
 	// thrust initialization
@@ -196,12 +217,14 @@ func main(){
 	app.Use(gin.Recovery())
 	app.Use(TimerMiddleWare())
 
-	app.LoadHTMLGlob("templates/**/*")
+
+	app.HTMLRender = loadTemplates("index.tmpl","square.tmpl", "norms.tmpl")
+	// app.LoadHTMLGlob("templates/*")
 
 	// index page, post returns json status, get will return an html status page
 	app.POST("/", index)
         app.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "public/index.tmpl", gin.H{
+		c.HTML(http.StatusOK, "index.tmpl", gin.H{
 			"title": "VectorVictor",
 		})
 	})
@@ -209,7 +232,7 @@ func main(){
 	// square: a post will return json response and get will be an html page
 	app.POST("/square", square)
 	app.GET("/square", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "public/square.tmpl", gin.H{
+		c.HTML(http.StatusOK, "square.tmpl", gin.H{
 			"title": "VectorVictor: Square",
 		})
 	})
@@ -217,7 +240,7 @@ func main(){
 	// norm: a post will return json response and get will be an html page
 	app.POST("/norm", norm)
 	app.GET("/norm", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "public/norms.tmpl", gin.H{
+		c.HTML(http.StatusOK, "norms.tmpl", gin.H{
 			"title": "VectorVictor: Norms",
 		})
 	})
