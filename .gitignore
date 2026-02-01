@@ -1,35 +1,38 @@
-# Created by .ignore support plugin (hsz.mobi)
-### Go template
-# Compiled Object files, Static and Dynamic libs (Shared Objects)
-*.o
-*.a
-*.so
-
-# Folders
-_obj
-_test
-
-# ignore dirs
-cache/
-provisioner/
-
-
-# Architecture specific extensions/prefixes
-*.[568vq]
-[568vq].out
-
-*.cgo1.go
-*.cgo2.c
-_cgo_defun.c
-_cgo_gotypes.go
-_cgo_export.*
-
-_testmain.go
-
+# Binaries
 *.exe
-*.test
-*.prof
+*.exe~
+*.dll
+*.so
+*.dylib
+vectorvictor
+VectorVictor
 
-/vendor/golang.org/
-/vendor/gopkg.in/
-/vendor/github.com/
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.out
+
+# Build output
+/dist/
+
+# Dependency directories
+vendor/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go workspace file
+go.work
+
+# Local cache
+cache/

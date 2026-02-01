@@ -1,64 +1,77 @@
 {{ define "square.tmpl" }}
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ .title }}</title>
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-
-    <!-- Optional theme -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   </head>
   <body>
-  <nav class="navbar navbar-default navbar-fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
       <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="/">VectorVictor</a>
-        </div>
-        <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
-            <li><a href="/square">Square</a></li>
-            <li><a href="/norm">Norm</a></li>
+        <a class="navbar-brand" href="/">VectorVictor</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item"><a class="nav-link active" href="/square">Square</a></li>
+            <li class="nav-item"><a class="nav-link" href="/norm">Norm</a></li>
           </ul>
-        </div><!--/.nav-collapse -->
+        </div>
       </div>
     </nav>
-  <div class="container">
-    <br><br><br><br>
 
-    <div class='row'>
-        <h2>Square</h2>
-        <p>an endpoint for squaring vectors elementwise</p>
-        <br>
-        <p>Enter your vector as a comma seperated string:</p>
-        <textarea class='form-control' id="vector"></textarea>
-        <br>
-        <button id="submit" class='btn btn-lg'>Submit</button>
-        <hr>
-        <div id="result">[]</div>
-    </div>
+    <main class="container" style="padding-top: 5rem;">
+      <h2>Square</h2>
+      <p class="text-muted">Square each element of a vector</p>
 
+      <div class="row">
+        <div class="col-md-8">
+          <div class="mb-3">
+            <label for="vector" class="form-label">Enter your vector as a comma-separated string:</label>
+            <textarea class="form-control" id="vector" rows="3" placeholder="1, 2, 3, 4, 5"></textarea>
+          </div>
+
+          <button id="submit" class="btn btn-primary btn-lg">Calculate</button>
+
+          <hr>
+
+          <div id="result" class="mt-3">
+            <div class="alert alert-secondary">Enter a vector and click Calculate</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
-        $("#submit").click(function(e) {
-            e.preventDefault();
-            console.log("square?v=" + $("#vector").val());
-            var data = $.ajax({
-                "type": "POST",
-                "url": "square?v=" + $("#vector").val(),
-                "success": function( data ) {
-                    $("#result").empty().append(JSON.stringify(data));
-                }
-            });
-        });
+      document.getElementById('submit').addEventListener('click', async function(e) {
+        e.preventDefault();
+        const vector = document.getElementById('vector').value;
+        const resultDiv = document.getElementById('result');
+
+        try {
+          const response = await fetch(`/square?v=${encodeURIComponent(vector)}`, {
+            method: 'POST'
+          });
+          const data = await response.json();
+
+          if (data.errors) {
+            resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.errors}</div>`;
+          } else {
+            resultDiv.innerHTML = `
+              <div class="alert alert-success">
+                <strong>Result:</strong> [${data.content.val.join(', ')}]
+              </div>
+            `;
+          }
+        } catch (err) {
+          resultDiv.innerHTML = `<div class="alert alert-danger">Request failed: ${err.message}</div>`;
+        }
+      });
     </script>
-</div>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   </body>
 </html>
 {{ end }}

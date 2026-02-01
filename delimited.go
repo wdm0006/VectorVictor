@@ -5,51 +5,59 @@ import (
 	"strings"
 )
 
-// csv to float vector converts a single comma separated string into
-// an array of 64 bit floats
-func CSV2FloatArray (stringvec string) ([]float64, error) {
+// CSV2FloatArray converts a comma-separated string into an array of float64.
+func CSV2FloatArray(stringvec string) ([]float64, error) {
 	return Delimited2FloatArray(stringvec, ",")
 }
 
-func TSV2FloatArray (stringvec string) ([]float64, error) {
+// TSV2FloatArray converts a tab-separated string into an array of float64.
+func TSV2FloatArray(stringvec string) ([]float64, error) {
 	return Delimited2FloatArray(stringvec, "\t")
 }
 
-func PSV2FloatArray (stringvec string) ([]float64, error) {
+// PSV2FloatArray converts a pipe-separated string into an array of float64.
+func PSV2FloatArray(stringvec string) ([]float64, error) {
 	return Delimited2FloatArray(stringvec, "|")
 }
 
-func whitelist_string(string_in string, whitelist []string) (string, error) {
-	var clean_stringvec string = ""
-	var stringvec []string = strings.Split(string_in, "")
- 	for _, c_char := range stringvec {
-		for _, wl_char := range whitelist {
-			if wl_char == c_char {
-				clean_stringvec += c_char
-				break
-			}
+// whitelistString removes any characters not in the whitelist from the input string.
+func whitelistString(input string, whitelist string) string {
+	var result strings.Builder
+	result.Grow(len(input))
+
+	for _, c := range input {
+		if strings.ContainsRune(whitelist, c) {
+			result.WriteRune(c)
 		}
 	}
-	return clean_stringvec, nil
+	return result.String()
 }
 
-func Delimited2FloatArray (stringvec string, delimiter string) ([]float64, error) {
-	// first clean the string
-	var whitelist []string = strings.Split("0123456789.,", "")
-	clean_stringvec, err := whitelist_string(stringvec, whitelist)
-	if err != nil {
-		return []float64{0.0}, nil	// TODO: return an error here
+// Delimited2FloatArray converts a delimited string into an array of float64.
+// It first sanitizes the input to only allow numeric characters, decimal points, and commas.
+func Delimited2FloatArray(stringvec string, delimiter string) ([]float64, error) {
+	// Sanitize the input string
+	cleanString := whitelistString(stringvec, "0123456789.,-"+delimiter)
+
+	if cleanString == "" {
+		return []float64{}, nil
 	}
 
-	// then parse it
-	var arr = strings.Split(clean_stringvec, delimiter)
-	var v = []float64{}
-	for _, i := range arr {
-		j, err := strconv.ParseFloat(i, 64)
-		if err != nil {
-			return v, err
+	// Parse the cleaned string
+	parts := strings.Split(cleanString, delimiter)
+	result := make([]float64, 0, len(parts))
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
 		}
-		v = append(v, j)
+		val, err := strconv.ParseFloat(part, 64)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, val)
 	}
-	return v, nil
+
+	return result, nil
 }

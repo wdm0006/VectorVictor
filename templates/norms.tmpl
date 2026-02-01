@@ -1,70 +1,160 @@
 {{ define "norms.tmpl" }}
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ .title }}</title>
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-
-    <!-- Optional theme -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   </head>
   <body>
-  <nav class="navbar navbar-default navbar-fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
       <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="/">VectorVictor</a>
-        </div>
-        <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
-            <li><a href="/square">Square</a></li>
-            <li><a href="/norm">Norm</a></li>
+        <a class="navbar-brand" href="/">VectorVictor</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item"><a class="nav-link" href="/square">Square</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/norm">Norm</a></li>
           </ul>
-        </div><!--/.nav-collapse -->
+        </div>
       </div>
     </nav>
-  <div class="container">
-    <br><br><br><br>
-    <div class='row'>
-        <h2>Norms</h2>
-        <p>an endpoint for calculating different norms of a vector</p>
-        <br>
-        <p>Enter your vector as a comma seperated string:</p>
-        <textarea class='form-control' id="vector"></textarea>
-        <br>
-        <select id="kind" class='form-control'>
-            <option selected value="l1">l1</option>
-            <option value="l2">l2</option>
-            <option value="linfinity">linfinity</option>
-        </select>
-        <br>
-        <button id="submit" class='btn btn-lg'>Submit</button>
-        <hr>
-        <div id="result">[]</div>
-    </div>
 
+    <main class="container" style="padding-top: 5rem;">
+      <h2>Norms</h2>
+      <p class="text-muted">Calculate different norms of a vector</p>
+
+      <div class="row">
+        <div class="col-md-8">
+          <div class="mb-3">
+            <label for="vector" class="form-label">Enter your vector as a comma-separated string:</label>
+            <textarea class="form-control" id="vector" rows="3" placeholder="1, 2, 3, 4, 5"></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label for="kind" class="form-label">Norm type:</label>
+            <select id="kind" class="form-select">
+              <optgroup label="Standard Norms">
+                <option value="l0">L0 (Count non-zero)</option>
+                <option value="l1">L1 (Manhattan)</option>
+                <option value="l2" selected>L2 (Euclidean)</option>
+                <option value="linfinity">L-infinity (Maximum)</option>
+              </optgroup>
+              <optgroup label="Generalized Norms">
+                <option value="lhalf">L0.5 (Sub-unitary)</option>
+                <option value="lp">Lp (Custom p-norm)</option>
+              </optgroup>
+              <optgroup label="Weighted Norms">
+                <option value="weighted">Weighted L2</option>
+                <option value="mahalanobis">Mahalanobis (diagonal)</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="mb-3" id="p-input" style="display: none;">
+            <label for="p-value" class="form-label">p value (for Lp norm):</label>
+            <input type="number" class="form-control" id="p-value" value="2" step="0.1" min="0">
+            <div class="form-text">Enter any p &ge; 0. Common values: 1 (L1), 2 (L2), 3, etc.</div>
+          </div>
+
+          <div class="mb-3" id="weights-input" style="display: none;">
+            <label for="weights" class="form-label">Weights (comma-separated):</label>
+            <input type="text" class="form-control" id="weights" placeholder="1, 1, 1, 1, 1">
+            <div class="form-text">One weight per vector element. Higher weights increase that element's contribution.</div>
+          </div>
+
+          <div class="mb-3" id="variances-input" style="display: none;">
+            <label for="variances" class="form-label">Variances (comma-separated):</label>
+            <input type="text" class="form-control" id="variances" placeholder="1, 1, 1, 1, 1">
+            <div class="form-text">One variance per dimension. Elements are divided by their variance.</div>
+          </div>
+
+          <button id="submit" class="btn btn-primary btn-lg">Calculate</button>
+
+          <hr>
+
+          <div id="result" class="mt-3">
+            <div class="alert alert-secondary">Enter a vector and click Calculate</div>
+          </div>
+
+          <div class="card mt-4">
+            <div class="card-header">Norm Reference</div>
+            <div class="card-body">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr><th>Norm</th><th>Formula</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>L0</td><td>count(x &ne; 0)</td><td>Number of non-zero elements</td></tr>
+                  <tr><td>L1</td><td>&Sigma;|x<sub>i</sub>|</td><td>Sum of absolute values</td></tr>
+                  <tr><td>L2</td><td>&radic;(&Sigma;x<sub>i</sub>&sup2;)</td><td>Euclidean distance</td></tr>
+                  <tr><td>L&infin;</td><td>max(|x<sub>i</sub>|)</td><td>Maximum absolute value</td></tr>
+                  <tr><td>L0.5</td><td>(&Sigma;&radic;|x<sub>i</sub>|)&sup2;</td><td>Promotes extreme sparsity</td></tr>
+                  <tr><td>Lp</td><td>(&Sigma;|x<sub>i</sub>|<sup>p</sup>)<sup>1/p</sup></td><td>General p-norm</td></tr>
+                  <tr><td>Weighted</td><td>&radic;(&Sigma;w<sub>i</sub>&middot;x<sub>i</sub>&sup2;)</td><td>L2 with weights</td></tr>
+                  <tr><td>Mahalanobis</td><td>&radic;(&Sigma;x<sub>i</sub>&sup2;/&sigma;<sub>i</sub>&sup2;)</td><td>Variance-normalized</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
-        $("#submit").click(function(e) {
-            e.preventDefault();
-            console.log("norm?v=" + $("#vector").val() + "&kind=" + $("#kind").val());
-            console.log($("#kind"));
-            var data = $.ajax({
-                "type": "POST",
-                "url": "norm?v=" + $("#vector").val() + "&kind=" + $("#kind").val(),
-                "success": function( data ) {
-                    $("#result").empty().append(JSON.stringify(data));
-                }
-            });
-        });
+      const kindSelect = document.getElementById('kind');
+      const pInput = document.getElementById('p-input');
+      const weightsInput = document.getElementById('weights-input');
+      const variancesInput = document.getElementById('variances-input');
+
+      kindSelect.addEventListener('change', function() {
+        pInput.style.display = this.value === 'lp' ? 'block' : 'none';
+        weightsInput.style.display = this.value === 'weighted' ? 'block' : 'none';
+        variancesInput.style.display = this.value === 'mahalanobis' ? 'block' : 'none';
+      });
+
+      document.getElementById('submit').addEventListener('click', async function(e) {
+        e.preventDefault();
+        const vector = document.getElementById('vector').value;
+        const kind = document.getElementById('kind').value;
+        const resultDiv = document.getElementById('result');
+
+        let url = `/norm?v=${encodeURIComponent(vector)}&kind=${encodeURIComponent(kind)}`;
+
+        if (kind === 'lp') {
+          const p = document.getElementById('p-value').value;
+          url += `&p=${encodeURIComponent(p)}`;
+        } else if (kind === 'weighted') {
+          const weights = document.getElementById('weights').value;
+          if (weights) url += `&weights=${encodeURIComponent(weights)}`;
+        } else if (kind === 'mahalanobis') {
+          const variances = document.getElementById('variances').value;
+          if (variances) url += `&variances=${encodeURIComponent(variances)}`;
+        }
+
+        try {
+          const response = await fetch(url, { method: 'POST' });
+          const data = await response.json();
+
+          if (data.errors) {
+            resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.errors}</div>`;
+          } else {
+            resultDiv.innerHTML = `
+              <div class="alert alert-success">
+                <strong>Result:</strong> ${data.content.norm}<br>
+                <small class="text-muted">Vector: [${data.content.vector.join(', ')}] | Type: ${data.content.kind}</small>
+              </div>
+            `;
+          }
+        } catch (err) {
+          resultDiv.innerHTML = `<div class="alert alert-danger">Request failed: ${err.message}</div>`;
+        }
+      });
     </script>
-</div>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   </body>
 </html>
 {{ end }}
