@@ -17,19 +17,19 @@ func init() {
 // Current implementations use math.Pow for everything
 func BenchmarkL2Current(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		L2(benchVector)
+		_, _ = L2(benchVector)
 	}
 }
 
 func BenchmarkL1Current(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		L1(benchVector)
+		_, _ = L1(benchVector)
 	}
 }
 
 func BenchmarkLinfinityCurrent(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Linfinity(benchVector)
+		_, _ = Linfinity(benchVector)
 	}
 }
 
@@ -84,13 +84,13 @@ func BenchmarkLInfinityOptimized(b *testing.B) {
 // Benchmark the other norms too
 func BenchmarkL0(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		L0(benchVector)
+		_, _ = L0(benchVector)
 	}
 }
 
 func BenchmarkLhalf(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Lhalf(benchVector)
+		_, _ = Lhalf(benchVector)
 	}
 }
 
@@ -101,7 +101,7 @@ func BenchmarkWeightedL2(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		WeightedL2(benchVector, weights)
+		_, _ = WeightedL2(benchVector, weights)
 	}
 }
 
@@ -112,12 +112,12 @@ func BenchmarkMahalanobis(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		Mahalanobis(benchVector, variances)
+		_, _ = Mahalanobis(benchVector, variances)
 	}
 }
 
 func BenchmarkLpGeneral(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Lp(benchVector, 3.0)
+		_, _ = Lp(benchVector, 3.0)
 	}
 }
