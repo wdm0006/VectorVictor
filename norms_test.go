@@ -143,6 +143,7 @@ func TestLN(t *testing.T) {
 		{"L1 via LN", []float64{1.0, 2.0, 3.0}, 1.0, 6.0},
 		{"L2 via LN", []float64{3.0, 4.0}, 2.0, 5.0},
 		{"high N falls back to max", []float64{1.0, 5.0, 3.0}, 150.0, 5.0},
+		{"positive infinity falls back to max", []float64{1.0, 5.0, 3.0}, math.Inf(1), 5.0},
 	}
 
 	for _, tt := range tests {
@@ -153,6 +154,32 @@ func TestLN(t *testing.T) {
 			}
 			if math.Abs(result-tt.expected) > 1e-10 {
 				t.Errorf("LN(%v, %v) = %v, want %v", tt.arr, tt.n, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestLNInvalidExponent(t *testing.T) {
+	tests := []struct {
+		name string
+		arr  []float64
+		n    float64
+	}{
+		{"zero N", []float64{1.0, 2.0}, 0.0},
+		{"negative N", []float64{1.0, 2.0}, -1.0},
+		{"negative infinity N", []float64{1.0, 2.0}, math.Inf(-1)},
+		{"NaN N", []float64{1.0, 2.0}, math.NaN()},
+		{"empty array with invalid N", []float64{}, -1.0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := LN(tt.arr, tt.n)
+			if err == nil {
+				t.Errorf("LN(%v, %v) = %v, want an error", tt.arr, tt.n, result)
+			}
+			if result != 0 {
+				t.Errorf("LN(%v, %v) = %v, want 0 alongside the error", tt.arr, tt.n, result)
 			}
 		})
 	}
@@ -199,6 +226,9 @@ func TestLp(t *testing.T) {
 		{"Lp with p=0 counts non-zero", []float64{1.0, 0.0, 3.0}, 0.0, 2.0},
 		{"empty array", []float64{}, 2.0, 0.0},
 		{"negative values with p=2", []float64{-3.0, -4.0}, 2.0, 5.0},
+		{"Lp with p=0.5 equals Lhalf", []float64{1.0, 4.0}, 0.5, 9.0},
+		{"high p falls back to max", []float64{1.0, 5.0, 3.0}, 150.0, 5.0},
+		{"positive infinity falls back to max", []float64{1.0, 5.0, 3.0}, math.Inf(1), 5.0},
 	}
 
 	for _, tt := range tests {
@@ -209,6 +239,32 @@ func TestLp(t *testing.T) {
 			}
 			if math.Abs(result-tt.expected) > 1e-10 {
 				t.Errorf("Lp(%v, %v) = %v, want %v", tt.arr, tt.p, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestLpInvalidExponent(t *testing.T) {
+	tests := []struct {
+		name string
+		arr  []float64
+		p    float64
+	}{
+		{"negative p", []float64{1.0, 2.0}, -1.0},
+		{"small negative p", []float64{1.0, 2.0}, -0.5},
+		{"negative infinity p", []float64{1.0, 2.0}, math.Inf(-1)},
+		{"NaN p", []float64{1.0, 2.0}, math.NaN()},
+		{"empty array with invalid p", []float64{}, -1.0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := Lp(tt.arr, tt.p)
+			if err == nil {
+				t.Errorf("Lp(%v, %v) = %v, want an error", tt.arr, tt.p, result)
+			}
+			if result != 0 {
+				t.Errorf("Lp(%v, %v) = %v, want 0 alongside the error", tt.arr, tt.p, result)
 			}
 		})
 	}

@@ -174,6 +174,39 @@ func TestNormEndpointErrors(t *testing.T) {
 			t.Error("Expected error in response, got nil")
 		}
 	})
+
+	invalidP := []struct {
+		name  string
+		query string
+	}{
+		{"NaN p", "?v=1,2&kind=lp&p=NaN"},
+		{"negative p", "?v=1,2&kind=lp&p=-1"},
+	}
+
+	for _, tt := range invalidP {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("POST", "/norm"+tt.query, nil)
+			router.ServeHTTP(w, req)
+
+			if w.Code != http.StatusBadRequest {
+				t.Errorf("POST /norm%s returned status %d, want %d", tt.query, w.Code, http.StatusBadRequest)
+			}
+
+			if w.Body.Len() == 0 {
+				t.Fatalf("POST /norm%s returned an empty body", tt.query)
+			}
+
+			var response map[string]interface{}
+			if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+				t.Fatalf("Failed to parse JSON response: %v", err)
+			}
+
+			if response["errors"] == nil {
+				t.Error("Expected error in response, got nil")
+			}
+		})
+	}
 }
 
 func TestHealthEndpoint(t *testing.T) {
