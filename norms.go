@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -100,8 +101,16 @@ func Lhalf(arr []float64) (float64, error) {
 // LN calculates the general L-N norm of a vector for any N > 0.
 // Formula: ||x||ₙ = (Σ|xᵢ|^N)^(1/N)
 // For N >= maxN, returns L-infinity norm.
+// Returns an error for N <= 0 or NaN, which fall outside the norm's domain.
 // Time complexity: O(n), but slower than L1/L2 due to math.Pow
 func LN(arr []float64, N float64) (float64, error) {
+	if math.IsNaN(N) {
+		return 0, fmt.Errorf("invalid exponent for LN: NaN (must be > 0)")
+	}
+	if N <= 0 {
+		return 0, fmt.Errorf("invalid exponent for LN: %v (must be > 0)", N)
+	}
+
 	if len(arr) == 0 {
 		return 0, nil
 	}
@@ -128,8 +137,16 @@ func LN(arr []float64, N float64) (float64, error) {
 // Lp calculates the general Lp norm for any p >= 0.
 // Formula: ||x||_p = (Σ|xᵢ|^p)^(1/p)
 // Special cases: p=0 counts non-zero, p=1 is L1, p=2 is L2.
+// Returns an error for p < 0 or NaN, which fall outside the norm's domain.
 // Time complexity: O(n)
 func Lp(arr []float64, p float64) (float64, error) {
+	if math.IsNaN(p) {
+		return 0, fmt.Errorf("invalid exponent for Lp: NaN (must be >= 0)")
+	}
+	if p < 0 {
+		return 0, fmt.Errorf("invalid exponent for Lp: %v (must be >= 0)", p)
+	}
+
 	if len(arr) == 0 {
 		return 0, nil
 	}
