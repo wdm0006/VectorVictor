@@ -19,6 +19,10 @@ func TestCSV2FloatArray(t *testing.T) {
 		{"empty string", "", []float64{}, false},
 		{"negative numbers", "-1,-2,-3", []float64{-1.0, -2.0, -3.0}, false},
 		{"mixed signs", "-1,0,1", []float64{-1.0, 0.0, 1.0}, false},
+		{"scientific notation", "1e3,2", []float64{1000.0, 2.0}, false},
+		{"scientific notation with negative exponent", "1.5e-3", []float64{0.0015}, false},
+		{"scientific notation with uppercase exponent", "2E2", []float64{200.0}, false},
+		{"explicit positive sign", "+2,3", []float64{2.0, 3.0}, false},
 	}
 
 	for _, tt := range tests {

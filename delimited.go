@@ -34,10 +34,10 @@ func whitelistString(input string, whitelist string) string {
 }
 
 // Delimited2FloatArray converts a delimited string into an array of float64.
-// It first sanitizes the input to only allow numeric characters, decimal points, and commas.
+// It first sanitizes the input to allow signed decimal and scientific notation.
 func Delimited2FloatArray(stringvec string, delimiter string) ([]float64, error) {
 	// Sanitize the input string
-	cleanString := whitelistString(stringvec, "0123456789.,-"+delimiter)
+	cleanString := whitelistString(stringvec, "0123456789.,-+eE"+delimiter)
 
 	if cleanString == "" {
 		return []float64{}, nil
