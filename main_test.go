@@ -207,6 +207,42 @@ func TestNormEndpointErrors(t *testing.T) {
 			}
 		})
 	}
+
+	// Negative weights/variances used to produce NaN, which is not
+	// JSON-serializable, causing the encoder to emit an empty-body 200.
+	// Assert a proper 400 with a populated errors field and non-empty body.
+	negativeCases := []struct {
+		name  string
+		query string
+	}{
+		{"negative weights", "?v=3,4&kind=weighted&weights=-1,-1"},
+		{"negative variances", "?v=3,4&kind=mahalanobis&variances=-1,-1"},
+	}
+
+	for _, tc := range negativeCases {
+		t.Run(tc.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("POST", "/norm"+tc.query, nil)
+			router.ServeHTTP(w, req)
+
+			if w.Code != http.StatusBadRequest {
+				t.Errorf("POST /norm%s returned status %d, want %d", tc.query, w.Code, http.StatusBadRequest)
+			}
+
+			if w.Body.Len() == 0 {
+				t.Fatalf("POST /norm%s returned an empty body, want a populated error response", tc.query)
+			}
+
+			var response map[string]interface{}
+			if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+				t.Fatalf("Failed to parse JSON response: %v", err)
+			}
+
+			if response["errors"] == nil {
+				t.Error("Expected error in response, got nil")
+			}
+		})
+	}
 }
 
 func TestHealthEndpoint(t *testing.T) {

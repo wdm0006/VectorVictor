@@ -184,6 +184,9 @@ func WeightedL2(arr []float64, weights []float64) (float64, error) {
 		w := 1.0
 		if i < len(weights) {
 			w = weights[i]
+			if w < 0 {
+				return 0, fmt.Errorf("weight at index %d is negative (%g): weights must be >= 0", i, w)
+			}
 		}
 		sum += w * v * v
 	}
@@ -199,8 +202,13 @@ func Mahalanobis(arr []float64, variances []float64) (float64, error) {
 	var sum float64
 	for i, v := range arr {
 		variance := 1.0
-		if i < len(variances) && variances[i] != 0 {
-			variance = variances[i]
+		if i < len(variances) {
+			if variances[i] < 0 {
+				return 0, fmt.Errorf("variance at index %d is negative (%g): variances must be > 0", i, variances[i])
+			}
+			if variances[i] != 0 {
+				variance = variances[i]
+			}
 		}
 		sum += (v * v) / variance
 	}
