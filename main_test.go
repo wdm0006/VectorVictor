@@ -83,6 +83,8 @@ func TestSquareEndpoint(t *testing.T) {
 		{"valid input", "?v=1,2,3", http.StatusOK, []float64{1, 4, 9}},
 		{"single value", "?v=5", http.StatusOK, []float64{25}},
 		{"empty input", "?v=", http.StatusOK, nil},
+		{"spaced input", "?v=1, 2, 3", http.StatusOK, []float64{1, 4, 9}},
+		{"malformed token", "?v=1oops2,3", http.StatusBadRequest, nil},
 	}
 
 	for _, tt := range tests {
@@ -125,6 +127,7 @@ func TestNormEndpoint(t *testing.T) {
 		{"L1 norm", "?v=1,2,3&kind=l1", http.StatusOK, 6.0},
 		{"L-infinity", "?v=1,5,3&kind=linfinity", http.StatusOK, 5.0},
 		{"default L2", "?v=3,4", http.StatusOK, 5.0},
+		{"signed and scientific L1", "?v=-3,4e0&kind=l1", http.StatusOK, 7.0},
 	}
 
 	for _, tt := range tests {
@@ -181,6 +184,9 @@ func TestNormEndpointErrors(t *testing.T) {
 	}{
 		{"NaN p", "?v=1,2&kind=lp&p=NaN"},
 		{"negative p", "?v=1,2&kind=lp&p=-1"},
+		{"malformed v token", "?v=1oops2,3&kind=l2"},
+		{"invalid weights token", "?v=3,4&kind=weighted&weights=1x,2"},
+		{"invalid variances token", "?v=3,4&kind=mahalanobis&variances=1x,2"},
 	}
 
 	for _, tt := range invalidP {

@@ -23,6 +23,9 @@ func TestCSV2FloatArray(t *testing.T) {
 		{"scientific notation with negative exponent", "1.5e-3", []float64{0.0015}, false},
 		{"scientific notation with uppercase exponent", "2E2", []float64{200.0}, false},
 		{"explicit positive sign", "+2,3", []float64{2.0, 3.0}, false},
+		{"skipped empty fields", "1,,3", []float64{1.0, 3.0}, false},
+		{"malformed token rejected", "1oops2,3", nil, true},
+		{"trailing letter rejected", "12x,3", nil, true},
 	}
 
 	for _, tt := range tests {
@@ -120,30 +123,6 @@ func TestPSV2FloatArray(t *testing.T) {
 	}
 }
 
-func TestWhitelistString(t *testing.T) {
-	tests := []struct {
-		name      string
-		input     string
-		whitelist string
-		expected  string
-	}{
-		{"remove letters", "a1b2c3", "0123456789", "123"},
-		{"keep all", "123", "0123456789", "123"},
-		{"remove all", "abc", "0123456789", ""},
-		{"mixed", "1.5,2.5", "0123456789.,", "1.5,2.5"},
-		{"empty input", "", "0123456789", ""},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := whitelistString(tt.input, tt.whitelist)
-			if result != tt.expected {
-				t.Errorf("whitelistString(%q, %q) = %q, want %q", tt.input, tt.whitelist, result, tt.expected)
-			}
-		})
-	}
-}
-
 func TestDelimited2FloatArray(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -154,8 +133,12 @@ func TestDelimited2FloatArray(t *testing.T) {
 	}{
 		{"comma delimiter", "1,2,3", ",", []float64{1.0, 2.0, 3.0}, false},
 		{"semicolon delimiter", "1;2;3", ";", []float64{1.0, 2.0, 3.0}, false},
-		{"with extra characters filtered", "1a,2b,3c", ",", []float64{1.0, 2.0, 3.0}, false},
 		{"empty string", "", ",", []float64{}, false},
+		{"skipped empty fields", "1,,3", ",", []float64{1.0, 3.0}, false},
+		{"surrounding whitespace", " 1 , 2 , 3 ", ",", []float64{1.0, 2.0, 3.0}, false},
+		{"signed and scientific", "-1,+2,1.5e-3", ",", []float64{-1.0, 2.0, 0.0015}, false},
+		{"malformed token rejected", "1oops2,3", ",", nil, true},
+		{"letters suffix rejected", "1a,2b,3c", ",", nil, true},
 	}
 
 	for _, tt := range tests {
