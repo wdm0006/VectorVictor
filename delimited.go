@@ -20,31 +20,13 @@ func PSV2FloatArray(stringvec string) ([]float64, error) {
 	return Delimited2FloatArray(stringvec, "|")
 }
 
-// whitelistString removes any characters not in the whitelist from the input string.
-func whitelistString(input string, whitelist string) string {
-	var result strings.Builder
-	result.Grow(len(input))
-
-	for _, c := range input {
-		if strings.ContainsRune(whitelist, c) {
-			result.WriteRune(c)
-		}
-	}
-	return result.String()
-}
-
 // Delimited2FloatArray converts a delimited string into an array of float64.
-// It first sanitizes the input to allow signed decimal and scientific notation.
+// It splits on the delimiter, trims surrounding whitespace from each token, and
+// parses each non-empty token unchanged. A token containing unsupported
+// characters returns the ParseFloat error instead of being silently rewritten.
+// Empty input and empty fields are skipped, yielding an empty slice.
 func Delimited2FloatArray(stringvec string, delimiter string) ([]float64, error) {
-	// Sanitize the input string
-	cleanString := whitelistString(stringvec, "0123456789.,-+eE"+delimiter)
-
-	if cleanString == "" {
-		return []float64{}, nil
-	}
-
-	// Parse the cleaned string
-	parts := strings.Split(cleanString, delimiter)
+	parts := strings.Split(stringvec, delimiter)
 	result := make([]float64, 0, len(parts))
 
 	for _, part := range parts {
