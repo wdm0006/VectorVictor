@@ -179,14 +179,16 @@ func Lp(arr []float64, p float64) (float64, error) {
 // If weights is shorter than arr, remaining elements use weight 1.0.
 // Time complexity: O(n)
 func WeightedL2(arr []float64, weights []float64) (float64, error) {
+	for i, w := range weights {
+		if w < 0 {
+			return 0, fmt.Errorf("weight at index %d is negative (%g): weights must be >= 0", i, w)
+		}
+	}
 	var sum float64
 	for i, v := range arr {
 		w := 1.0
 		if i < len(weights) {
 			w = weights[i]
-			if w < 0 {
-				return 0, fmt.Errorf("weight at index %d is negative (%g): weights must be >= 0", i, w)
-			}
 		}
 		sum += w * v * v
 	}
@@ -199,16 +201,19 @@ func WeightedL2(arr []float64, weights []float64) (float64, error) {
 // For full Mahalanobis, you need the complete covariance matrix.
 // Time complexity: O(n)
 func Mahalanobis(arr []float64, variances []float64) (float64, error) {
+	for i, variance := range variances {
+		if variance < 0 {
+			return 0, fmt.Errorf("variance at index %d is negative (%g): variances must be > 0", i, variance)
+		}
+		if variance == 0 {
+			return 0, fmt.Errorf("variance at index %d is zero: variances must be > 0", i)
+		}
+	}
 	var sum float64
 	for i, v := range arr {
 		variance := 1.0
 		if i < len(variances) {
-			if variances[i] < 0 {
-				return 0, fmt.Errorf("variance at index %d is negative (%g): variances must be > 0", i, variances[i])
-			}
-			if variances[i] != 0 {
-				variance = variances[i]
-			}
+			variance = variances[i]
 		}
 		sum += (v * v) / variance
 	}
