@@ -187,6 +187,8 @@ func TestNormEndpointErrors(t *testing.T) {
 		{"malformed v token", "?v=1oops2,3&kind=l2"},
 		{"invalid weights token", "?v=3,4&kind=weighted&weights=1x,2"},
 		{"invalid variances token", "?v=3,4&kind=mahalanobis&variances=1x,2"},
+		{"zero variance", "?v=5,5&kind=mahalanobis&variances=0,1"},
+		{"negative weight beyond vector", "?v=1&kind=weighted&weights=1,-5"},
 	}
 
 	for _, tt := range invalidP {

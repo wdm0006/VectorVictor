@@ -332,6 +332,7 @@ func TestWeightedL2NegativeWeight(t *testing.T) {
 	}{
 		{"single negative weight", []float64{3.0, 4.0}, []float64{-1.0, -1.0}},
 		{"negative weight second position", []float64{3.0, 4.0}, []float64{1.0, -2.0}},
+		{"negative weight beyond vector length", []float64{1.0}, []float64{1.0, -5.0}},
 	}
 
 	for _, tt := range tests {
@@ -383,6 +384,7 @@ func TestMahalanobisNegativeVariance(t *testing.T) {
 	}{
 		{"single negative variance", []float64{3.0, 4.0}, []float64{-1.0, -1.0}},
 		{"negative variance second position", []float64{3.0, 4.0}, []float64{1.0, -2.0}},
+		{"negative variance beyond vector length", []float64{1.0}, []float64{1.0, -5.0}},
 	}
 
 	for _, tt := range tests {
@@ -393,6 +395,30 @@ func TestMahalanobisNegativeVariance(t *testing.T) {
 			}
 			if math.IsNaN(result) {
 				t.Errorf("Mahalanobis(%v, %v) returned NaN, expected 0 with error", tt.arr, tt.variances)
+			}
+		})
+	}
+}
+
+func TestMahalanobisZeroVariance(t *testing.T) {
+	tests := []struct {
+		name      string
+		arr       []float64
+		variances []float64
+	}{
+		{"zero first position", []float64{5.0, 5.0}, []float64{0, 1}},
+		{"all zero", []float64{5.0, 5.0}, []float64{0, 0}},
+		{"zero beyond vector length", []float64{1.0}, []float64{1.0, 0}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := Mahalanobis(tt.arr, tt.variances)
+			if err == nil {
+				t.Errorf("Mahalanobis(%v, %v) = %v, expected non-nil error for zero variance", tt.arr, tt.variances, result)
+			}
+			if result != 0 {
+				t.Errorf("Mahalanobis(%v, %v) = %v, expected 0 with error", tt.arr, tt.variances, result)
 			}
 		})
 	}
