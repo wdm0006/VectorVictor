@@ -47,6 +47,20 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
+      function showAlert(resultDiv, kind, build) {
+        const box = document.createElement('div');
+        box.className = 'alert alert-' + kind;
+        build(box);
+        resultDiv.replaceChildren(box);
+      }
+
+      function showAlert(resultDiv, kind, build) {
+        const box = document.createElement('div');
+        box.className = 'alert alert-' + kind;
+        build(box);
+        resultDiv.replaceChildren(box);
+      }
+
       document.getElementById('submit').addEventListener('click', async function(e) {
         e.preventDefault();
         const vector = document.getElementById('vector').value;
@@ -59,16 +73,16 @@
           const data = await response.json();
 
           if (data.errors) {
-            resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.errors}</div>`;
+            showAlert(resultDiv, 'danger', function(box) { box.textContent = `Error: ${data.errors}`; });
           } else {
-            resultDiv.innerHTML = `
-              <div class="alert alert-success">
-                <strong>Result:</strong> [${data.content.val.join(', ')}]
-              </div>
-            `;
+            showAlert(resultDiv, 'success', function(box) {
+              const label = document.createElement('strong');
+              label.textContent = 'Result:';
+              box.append(label, ` [${data.content.val.join(', ')}]`);
+            });
           }
         } catch (err) {
-          resultDiv.innerHTML = `<div class="alert alert-danger">Request failed: ${err.message}</div>`;
+          showAlert(resultDiv, 'danger', function(box) { box.textContent = `Request failed: ${err.message}`; });
         }
       });
     </script>
