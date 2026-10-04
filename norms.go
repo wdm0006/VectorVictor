@@ -108,6 +108,26 @@ func Lhalf(arr []float64) (float64, error) {
 	return finiteResult("Lhalf", sum*sum)
 }
 
+// scaledPowerNorm computes (Σ|xᵢ|^p)^(1/p) for finite p > 0 by normalizing by
+// the largest magnitude first, so representable results neither overflow nor
+// underflow in the intermediate powers.
+func scaledPowerNorm(arr []float64, p float64) float64 {
+	var maxAbs float64
+	for _, v := range arr {
+		if a := math.Abs(v); a > maxAbs {
+			maxAbs = a
+		}
+	}
+	if maxAbs == 0 {
+		return 0
+	}
+	var sum float64
+	for _, v := range arr {
+		sum += math.Pow(math.Abs(v)/maxAbs, p)
+	}
+	return maxAbs * math.Pow(sum, 1.0/p)
+}
+
 // LN calculates the general L-N norm of a vector for any N > 0.
 // Formula: ||x||ₙ = (Σ|xᵢ|^N)^(1/N)
 // For N >= maxN, returns L-infinity norm.
@@ -137,11 +157,7 @@ func LN(arr []float64, N float64) (float64, error) {
 		return Linfinity(arr)
 	}
 
-	var sumPowered float64
-	for _, v := range arr {
-		sumPowered += math.Pow(math.Abs(v), N)
-	}
-	return finiteResult("LN", math.Pow(sumPowered, 1.0/N))
+	return finiteResult("LN", scaledPowerNorm(arr, N))
 }
 
 // Lp calculates the general Lp norm for any p >= 0.
@@ -177,11 +193,7 @@ func Lp(arr []float64, p float64) (float64, error) {
 		return Linfinity(arr)
 	}
 
-	var sumPowered float64
-	for _, v := range arr {
-		sumPowered += math.Pow(math.Abs(v), p)
-	}
-	return finiteResult("Lp", math.Pow(sumPowered, 1.0/p))
+	return finiteResult("Lp", scaledPowerNorm(arr, p))
 }
 
 // WeightedL2 calculates the weighted L2 norm of a vector.

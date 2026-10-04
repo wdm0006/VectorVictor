@@ -373,3 +373,36 @@ func TestNormL2LargeFiniteVector(t *testing.T) {
 		t.Errorf("norm = %v, want %v", response.Content.Norm, want)
 	}
 }
+
+func TestNormLpExtremeMagnitudes(t *testing.T) {
+	cases := []struct {
+		query string
+		want  float64
+	}{
+		{"?v=1e200&kind=lp&p=3", 1e200},
+		{"?v=1e-200&kind=lp&p=3", 1e-200},
+	}
+	for _, tc := range cases {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/norm"+tc.query, nil)
+		setupRouter().ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("%s: status = %d: %s", tc.query, w.Code, w.Body.String())
+		}
+		var response struct {
+			Content struct {
+				Norm float64 `json:"norm"`
+			} `json:"content"`
+			Errors any `json:"errors"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+			t.Fatalf("%s: invalid JSON: %v", tc.query, err)
+		}
+		if response.Errors != nil {
+			t.Errorf("%s: errors = %v, want null", tc.query, response.Errors)
+		}
+		if math.Abs(response.Content.Norm-tc.want) > tc.want*1e-12 {
+			t.Errorf("%s: norm = %v, want %v", tc.query, response.Content.Norm, tc.want)
+		}
+	}
+}
