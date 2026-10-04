@@ -513,7 +513,7 @@ func TestGeneralPowerNormsScaleStable(t *testing.T) {
 }
 
 func TestGeneralPowerNormsZeroAndEmpty(t *testing.T) {
-	for _, arr := range [][]float64{nil, {}, {0}, {0, -0.0, 0}} {
+	for _, arr := range [][]float64{nil, {}, {0}, {0, math.Copysign(0, -1), 0}} {
 		if got, err := Lp(arr, 3); got != 0 || err != nil {
 			t.Errorf("Lp(%v, 3) = %v, %v; want 0, nil", arr, got, err)
 		}
