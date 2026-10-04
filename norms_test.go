@@ -423,3 +423,57 @@ func TestMahalanobisZeroVariance(t *testing.T) {
 		})
 	}
 }
+
+func TestL2AvoidsIntermediateOverflow(t *testing.T) {
+	got, err := L2([]float64{1e308, 1e308})
+	if err != nil {
+		t.Fatalf("L2 unexpected error: %v", err)
+	}
+	want := math.Hypot(1e308, 1e308)
+	if math.IsInf(got, 0) || math.Abs(got-want) > want*1e-12 {
+		t.Errorf("L2([1e308 1e308]) = %v, want %v", got, want)
+	}
+}
+
+func TestWeightedAndMahalanobisAvoidIntermediateOverflow(t *testing.T) {
+	want := math.Hypot(1e308, 1e308)
+	got, err := WeightedL2([]float64{1e308, 1e308}, nil)
+	if err != nil || math.Abs(got-want) > want*1e-12 {
+		t.Errorf("WeightedL2 = %v, %v, want %v", got, err, want)
+	}
+	got, err = Mahalanobis([]float64{1e308, 1e308}, nil)
+	if err != nil || math.Abs(got-want) > want*1e-12 {
+		t.Errorf("Mahalanobis = %v, %v, want %v", got, err, want)
+	}
+}
+
+func TestNormsRejectNonFiniteResults(t *testing.T) {
+	big := []float64{math.MaxFloat64, math.MaxFloat64}
+	tests := []struct {
+		name string
+		fn   func() (float64, error)
+	}{
+		{"L1 overflow", func() (float64, error) { return L1(big) }},
+		{"L2 overflow", func() (float64, error) { return L2(big) }},
+		{"L2 NaN input", func() (float64, error) { return L2([]float64{math.NaN()}) }},
+		{"Linfinity Inf input", func() (float64, error) { return Linfinity([]float64{math.Inf(1)}) }},
+		{"Lhalf overflow", func() (float64, error) { return Lhalf(big) }},
+		{"Lp overflow", func() (float64, error) { return Lp(big, 3) }},
+		{"LN overflow", func() (float64, error) { return LN(big, 3) }},
+		{"WeightedL2 overflow", func() (float64, error) { return WeightedL2([]float64{1e200}, []float64{1e300}) }},
+		{"WeightedL2 NaN weight", func() (float64, error) { return WeightedL2([]float64{1}, []float64{math.NaN()}) }},
+		{"Mahalanobis overflow", func() (float64, error) { return Mahalanobis([]float64{1e200}, []float64{1e-300}) }},
+		{"Mahalanobis NaN variance", func() (float64, error) { return Mahalanobis([]float64{1}, []float64{math.NaN()}) }},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.fn()
+			if err == nil {
+				t.Fatalf("expected error, got %v", got)
+			}
+			if got != 0 {
+				t.Errorf("value on error = %v, want 0", got)
+			}
+		})
+	}
+}

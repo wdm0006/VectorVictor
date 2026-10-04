@@ -33,6 +33,15 @@ func arrayMax(arr []float64) (float64, error) {
 	return largest, nil
 }
 
+// finiteResult returns an error when a computed norm is NaN or infinite, which
+// the JSON encoder cannot represent.
+func finiteResult(name string, v float64) (float64, error) {
+	if math.IsNaN(v) || math.IsInf(v, 0) {
+		return 0, fmt.Errorf("%s result is not representable as a finite number (%v)", name, v)
+	}
+	return v, nil
+}
+
 // L0 calculates the L0 "norm" of a vector.
 // Counts the number of non-zero elements.
 // Note: L0 is not a true norm (doesn't satisfy triangle inequality).
@@ -55,18 +64,19 @@ func L1(arr []float64) (float64, error) {
 	for _, v := range arr {
 		sum += math.Abs(v)
 	}
-	return sum, nil
+	return finiteResult("L1", sum)
 }
 
 // L2 calculates the L2 (Euclidean) norm of a vector.
-// Formula: ||x||₂ = √(Σxᵢ²)
+// Formula: ||x||₂ = √(Σxᵢ²), accumulated with math.Hypot to avoid
+// intermediate overflow.
 // Time complexity: O(n)
 func L2(arr []float64) (float64, error) {
-	var sum float64
+	var norm float64
 	for _, v := range arr {
-		sum += v * v
+		norm = math.Hypot(norm, v)
 	}
-	return math.Sqrt(sum), nil
+	return finiteResult("L2", norm)
 }
 
 // Linfinity calculates the L-infinity (maximum) norm of a vector.
@@ -82,7 +92,7 @@ func Linfinity(arr []float64) (float64, error) {
 			maxVal = absV
 		}
 	}
-	return maxVal, nil
+	return finiteResult("Linfinity", maxVal)
 }
 
 // Lhalf calculates the L0.5 (sub-unitary) quasi-norm of a vector.
@@ -95,7 +105,7 @@ func Lhalf(arr []float64) (float64, error) {
 	for _, v := range arr {
 		sum += math.Sqrt(math.Abs(v))
 	}
-	return sum * sum, nil
+	return finiteResult("Lhalf", sum*sum)
 }
 
 // LN calculates the general L-N norm of a vector for any N > 0.
@@ -131,7 +141,7 @@ func LN(arr []float64, N float64) (float64, error) {
 	for _, v := range arr {
 		sumPowered += math.Pow(math.Abs(v), N)
 	}
-	return math.Pow(sumPowered, 1.0/N), nil
+	return finiteResult("LN", math.Pow(sumPowered, 1.0/N))
 }
 
 // Lp calculates the general Lp norm for any p >= 0.
@@ -171,7 +181,7 @@ func Lp(arr []float64, p float64) (float64, error) {
 	for _, v := range arr {
 		sumPowered += math.Pow(math.Abs(v), p)
 	}
-	return math.Pow(sumPowered, 1.0/p), nil
+	return finiteResult("Lp", math.Pow(sumPowered, 1.0/p))
 }
 
 // WeightedL2 calculates the weighted L2 norm of a vector.
@@ -180,19 +190,22 @@ func Lp(arr []float64, p float64) (float64, error) {
 // Time complexity: O(n)
 func WeightedL2(arr []float64, weights []float64) (float64, error) {
 	for i, w := range weights {
+		if math.IsNaN(w) {
+			return 0, fmt.Errorf("weight at index %d is NaN: weights must be >= 0", i)
+		}
 		if w < 0 {
 			return 0, fmt.Errorf("weight at index %d is negative (%g): weights must be >= 0", i, w)
 		}
 	}
-	var sum float64
+	var norm float64
 	for i, v := range arr {
 		w := 1.0
 		if i < len(weights) {
 			w = weights[i]
 		}
-		sum += w * v * v
+		norm = math.Hypot(norm, math.Sqrt(w)*v)
 	}
-	return math.Sqrt(sum), nil
+	return finiteResult("WeightedL2", norm)
 }
 
 // Mahalanobis calculates a diagonal Mahalanobis distance.
@@ -202,6 +215,9 @@ func WeightedL2(arr []float64, weights []float64) (float64, error) {
 // Time complexity: O(n)
 func Mahalanobis(arr []float64, variances []float64) (float64, error) {
 	for i, variance := range variances {
+		if math.IsNaN(variance) {
+			return 0, fmt.Errorf("variance at index %d is NaN: variances must be > 0", i)
+		}
 		if variance < 0 {
 			return 0, fmt.Errorf("variance at index %d is negative (%g): variances must be > 0", i, variance)
 		}
@@ -209,13 +225,13 @@ func Mahalanobis(arr []float64, variances []float64) (float64, error) {
 			return 0, fmt.Errorf("variance at index %d is zero: variances must be > 0", i)
 		}
 	}
-	var sum float64
+	var norm float64
 	for i, v := range arr {
 		variance := 1.0
 		if i < len(variances) {
 			variance = variances[i]
 		}
-		sum += (v * v) / variance
+		norm = math.Hypot(norm, v/math.Sqrt(variance))
 	}
-	return math.Sqrt(sum), nil
+	return finiteResult("Mahalanobis", norm)
 }

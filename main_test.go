@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -313,5 +314,62 @@ func TestCalculatorPagesAvoidHTMLSinks(t *testing.T) {
 				t.Errorf("GET %s page contains HTML-parsing sink %q", path, sink)
 			}
 		}
+	}
+}
+
+func TestNonFiniteInputsReturnJSONError(t *testing.T) {
+	router := setupRouter()
+	queries := []string{
+		"/norm?v=NaN&kind=l2",
+		"/norm?v=1e308,1e308&kind=l1",
+		"/norm?v=1&kind=weighted&weights=NaN",
+		"/norm?v=1&kind=mahalanobis&variances=NaN",
+		"/norm?v=1e200&kind=weighted&weights=1e300",
+		"/square?v=1e308",
+		"/square?v=Inf",
+	}
+	for _, q := range queries {
+		t.Run(q, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("POST", q, nil)
+			router.ServeHTTP(w, req)
+
+			if w.Code < 400 {
+				t.Errorf("status = %d, want error status", w.Code)
+			}
+			if w.Body.Len() == 0 {
+				t.Fatal("empty body")
+			}
+			var response map[string]interface{}
+			if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+				t.Fatalf("invalid JSON: %v", err)
+			}
+			if s, _ := response["errors"].(string); s == "" {
+				t.Errorf("errors = %v, want non-empty string", response["errors"])
+			}
+		})
+	}
+}
+
+func TestNormL2LargeFiniteVector(t *testing.T) {
+	router := setupRouter()
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/norm?v=1e308,1e308&kind=l2", nil)
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", w.Code, w.Body.String())
+	}
+	var response struct {
+		Content struct {
+			Norm float64 `json:"norm"`
+		} `json:"content"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	want := math.Hypot(1e308, 1e308)
+	if math.Abs(response.Content.Norm-want) > want*1e-12 {
+		t.Errorf("norm = %v, want %v", response.Content.Norm, want)
 	}
 }

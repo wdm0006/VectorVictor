@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -18,5 +19,14 @@ func Square(arr []float64) ([]float64, error) {
 	// Create a copy to avoid modifying the original
 	result := make([]float64, len(arr))
 	copy(result, arr)
-	return arrayExp(result, 2.0)
+	result, err := arrayExp(result, 2.0)
+	if err != nil {
+		return nil, err
+	}
+	for i, v := range result {
+		if math.IsNaN(v) || math.IsInf(v, 0) {
+			return nil, fmt.Errorf("square of element %d (%g) is not representable as a finite number", i, arr[i])
+		}
+	}
+	return result, nil
 }
