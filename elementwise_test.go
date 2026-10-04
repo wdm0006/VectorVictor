@@ -78,3 +78,14 @@ func TestArrayExp(t *testing.T) {
 		})
 	}
 }
+
+func TestSquareRejectsOverflow(t *testing.T) {
+	in := []float64{2, 1e308}
+	got, err := Square(in)
+	if err == nil {
+		t.Fatalf("expected error, got %v", got)
+	}
+	if in[0] != 2 || in[1] != 1e308 {
+		t.Errorf("input mutated: %v", in)
+	}
+}

@@ -26,6 +26,12 @@ func TestCSV2FloatArray(t *testing.T) {
 		{"skipped empty fields", "1,,3", []float64{1.0, 3.0}, false},
 		{"malformed token rejected", "1oops2,3", nil, true},
 		{"trailing letter rejected", "12x,3", nil, true},
+		{"NaN rejected", "1,NaN", nil, true},
+		{"Inf rejected", "Inf", nil, true},
+		{"plus Inf rejected", "+Inf", nil, true},
+		{"minus Inf rejected", "-Inf", nil, true},
+		{"infinity spelling rejected", "1,-infinity", nil, true},
+		{"overflowing literal rejected", "1e999", nil, true},
 	}
 
 	for _, tt := range tests {
