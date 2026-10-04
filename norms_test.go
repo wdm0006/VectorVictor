@@ -477,3 +477,58 @@ func TestNormsRejectNonFiniteResults(t *testing.T) {
 		})
 	}
 }
+
+func relErr(got, want float64) float64 {
+	return math.Abs(got-want) / math.Abs(want)
+}
+
+func TestGeneralPowerNormsScaleStable(t *testing.T) {
+	cases := []struct {
+		name string
+		arr  []float64
+		p    float64
+		want float64
+	}{
+		{"large single p3", []float64{1e200}, 3, 1e200},
+		{"large single p4", []float64{1e200}, 4, 1e200},
+		{"tiny single p3", []float64{1e-200}, 3, 1e-200},
+		{"tiny single p4", []float64{1e-200}, 4, 1e-200},
+		{"large pair p3", []float64{-1e200, 1e200}, 3, 1e200 * math.Cbrt(2)},
+		{"tiny pair p4", []float64{1e-200, -1e-200}, 4, 1e-200 * math.Pow(2, 0.25)},
+		{"large triple p3 signs", []float64{3e150, -4e150, 5e150}, 3, 6e150},
+		{"tiny triple p3 signs", []float64{3e-150, -4e-150, 5e-150}, 3, 6e-150},
+		{"ordinary p3", []float64{1, -2, 3}, 3, math.Cbrt(36)},
+		{"fractional p", []float64{1e200, 1e200}, 1.5, 1e200 * math.Pow(2, 1/1.5)},
+	}
+	for _, tc := range cases {
+		got, err := Lp(tc.arr, tc.p)
+		if err != nil || relErr(got, tc.want) > 1e-12 {
+			t.Errorf("Lp %s = %v, %v; want %v", tc.name, got, err, tc.want)
+		}
+		got, err = LN(tc.arr, tc.p)
+		if err != nil || relErr(got, tc.want) > 1e-12 {
+			t.Errorf("LN %s = %v, %v; want %v", tc.name, got, err, tc.want)
+		}
+	}
+}
+
+func TestGeneralPowerNormsZeroAndEmpty(t *testing.T) {
+	for _, arr := range [][]float64{nil, {}, {0}, {0, math.Copysign(0, -1), 0}} {
+		if got, err := Lp(arr, 3); got != 0 || err != nil {
+			t.Errorf("Lp(%v, 3) = %v, %v; want 0, nil", arr, got, err)
+		}
+		if got, err := LN(arr, 3); got != 0 || err != nil {
+			t.Errorf("LN(%v, 3) = %v, %v; want 0, nil", arr, got, err)
+		}
+	}
+}
+
+func TestGeneralPowerNormsUnrepresentableStillErrors(t *testing.T) {
+	arr := []float64{math.MaxFloat64, math.MaxFloat64}
+	if got, err := Lp(arr, 3); err == nil {
+		t.Errorf("Lp = %v, want error", got)
+	}
+	if got, err := LN(arr, 3); err == nil {
+		t.Errorf("LN = %v, want error", got)
+	}
+}
