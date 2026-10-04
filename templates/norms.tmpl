@@ -106,6 +106,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
+      function showAlert(resultDiv, kind, build) {
+        const box = document.createElement('div');
+        box.className = 'alert alert-' + kind;
+        build(box);
+        resultDiv.replaceChildren(box);
+      }
+
       const kindSelect = document.getElementById('kind');
       const pInput = document.getElementById('p-input');
       const weightsInput = document.getElementById('weights-input');
@@ -141,17 +148,19 @@
           const data = await response.json();
 
           if (data.errors) {
-            resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.errors}</div>`;
+            showAlert(resultDiv, 'danger', function(box) { box.textContent = `Error: ${data.errors}`; });
           } else {
-            resultDiv.innerHTML = `
-              <div class="alert alert-success">
-                <strong>Result:</strong> ${data.content.norm}<br>
-                <small class="text-muted">Vector: [${data.content.vector.join(', ')}] | Type: ${data.content.kind}</small>
-              </div>
-            `;
+            showAlert(resultDiv, 'success', function(box) {
+              const label = document.createElement('strong');
+              label.textContent = 'Result:';
+              const detail = document.createElement('small');
+              detail.className = 'text-muted';
+              detail.textContent = `Vector: [${data.content.vector.join(', ')}] | Type: ${data.content.kind}`;
+              box.append(label, ` ${data.content.norm}`, document.createElement('br'), detail);
+            });
           }
         } catch (err) {
-          resultDiv.innerHTML = `<div class="alert alert-danger">Request failed: ${err.message}</div>`;
+          showAlert(resultDiv, 'danger', function(box) { box.textContent = `Request failed: ${err.message}`; });
         }
       });
     </script>

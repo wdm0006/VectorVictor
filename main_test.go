@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -296,4 +297,21 @@ func TestWrapResponse(t *testing.T) {
 			t.Error("Expected error in response, got nil")
 		}
 	})
+}
+
+func TestCalculatorPagesAvoidHTMLSinks(t *testing.T) {
+	router := setupRouter()
+
+	for _, path := range []string{"/norm", "/square"} {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", path, nil)
+		router.ServeHTTP(w, req)
+
+		body := w.Body.String()
+		for _, sink := range []string{"innerHTML", "insertAdjacentHTML", "outerHTML", "document.write"} {
+			if strings.Contains(body, sink) {
+				t.Errorf("GET %s page contains HTML-parsing sink %q", path, sink)
+			}
+		}
+	}
 }
